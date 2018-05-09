@@ -7,53 +7,67 @@ using System.Threading.Tasks;
 
 namespace myGame
 {
-    class Map
+    public class Map
     {
-        private readonly int CellSize;
-        public readonly GameItem[,] Field;
-        public Map(GameItem[,] field)
+        public readonly int CellSize;
+        public readonly int HeightInCells;
+        public readonly int WidthInCells;
+        public readonly int Width;
+        public readonly int Height;
+        public readonly bool[,] CellIsWall;
+        
+        public Map(bool[,] cells, int cellSize)
         {
-            Field = field;
+            CellIsWall = cells;
+            WidthInCells = CellIsWall.GetLength(0);
+            HeightInCells = CellIsWall.GetLength(1);
+            CellSize = cellSize;
+            Width = WidthInCells * CellSize;
+            Height = HeightInCells * CellSize;
         }
-        public bool IsInCellBounds(int dx, int dy)
+        
+        public Point InWhichCell(Point position)
         {
-            return Math.Abs(dx) <= CellSize / 2 && Math.Abs(dy) <= CellSize / 2;
-        }
-        public Map ChangeMap(string map)
-        {
-            return MapCreature.CreateMap(map);
-        }
-    }
-
-    class MapCreature
-    {
-        public static Map CreateMap(string map)
-        {
-            var rows = map.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-            var result = new GameItem[rows[0].Length, rows.Length];
-            for (var x = 0; x < result.GetLength(0); x++)
-                for (var y = 0; y < result.GetLength(1); y++)
-                    result[x, y] = CreateCell(rows[y][x]);
-            return new Map(result);
+            return new Point(position.X / CellSize, position.Y / CellSize);
         }
 
-        private static GameItem CreateCell(char c)
+        public bool IsWallAt(Point position)
         {
-            switch (c)
-            {
-                case 'P':
-                    return new Player();
-                case 'E':
-                    return new Enemy();
-                case 'H':
-                    return new Hole();
-                case ' ':
-                    return new Path();
-                case 'W':
-                    return new Wall();
-                default:
-                    throw new Exception($"wrong cell {c}");
-            }
+            var cell = InWhichCell(position);
+            return CellIsWall[cell.X, cell.Y];
         }
+
     }
+
+//    class MapCreature
+//    {
+//        public static Map CreateMap(string map)
+//        {
+//            var rows = map.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+//            var result = new GameItem[rows[0].Length, rows.Length];
+//            for (var x = 0; x < result.GetLength(0); x++)
+//                for (var y = 0; y < result.GetLength(1); y++)
+//                    result[x, y] = CreateCell(rows[y][x]);
+//            return new Map(result);
+//        }
+//
+//        private static GameItem CreateCell(char c)
+//        {
+//            switch (c)
+//            {
+//                case 'P':
+//                    return new Player();
+//                case 'E':
+//                    return new Enemy();
+//                case 'H':
+//                    return new Hole();
+//                case ' ':
+//                    return new Path();
+//                case 'W':
+//                    return new Wall();
+//                default:
+//                    throw new Exception($"wrong cell {c}");
+//            }
+//        }
+//    }
 }
