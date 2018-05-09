@@ -6,18 +6,16 @@ namespace myGame
     {
         public Map Map;
         public Player Player;
-        public readonly Timer timer;
-        public bool playerCanMove;
 
         public void Pause()
         {
-            // what to do??
+            // nothing to do
         }
         
-        public void TimerTick()
+        public void Tick()
         {
-            if (Player.CanMove && !Map.IsWallAt(Player.NextPosition))
-                Player.Move();
+            if (!Map.IsWallAt(Player.NextPosition))
+                Player.TryMove();
         }
     }
 }

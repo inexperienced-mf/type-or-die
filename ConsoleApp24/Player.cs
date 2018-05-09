@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Timers;
 
 namespace myGame
 {
@@ -20,12 +21,18 @@ namespace myGame
         public Point NextPosition { get; private set; }
         public bool CanMove { get; private set; }
         private Direction wantedDirection;
+        private readonly Timer movementTimer;
+        private readonly double movementCooldown;
 
         public Player(Point position, double movementCooldown)
         {
-//            this.movementCooldown = movementCooldown;
-//            movementTimer = new Timer(this.movementCooldown);
-//            movementTimer.Elapsed += (sender, e) => { CanMove = true; };
+            this.Position = position;
+            this.movementCooldown = movementCooldown;
+            movementTimer = new Timer(this.movementCooldown);
+            movementTimer.Elapsed += (sender, args) => CanMove = true;
+            movementTimer.Elapsed += (sender, args) => Console.WriteLine(wantedDirection);
+            movementTimer.AutoReset = false;
+            movementTimer.Start();
         }
 
         private Point getNextPosition()
@@ -53,9 +60,13 @@ namespace myGame
             return new Point(Position.X + dx, Position.Y + dy);
         }
 
-        public void Move()
+        public void TryMove()
         {
+            if (!CanMove) return;
             Position = NextPosition;
+            NextPosition = getNextPosition();
+            CanMove = false;
+            movementTimer.Start();
         }
     }
 

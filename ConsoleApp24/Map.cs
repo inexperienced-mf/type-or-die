@@ -25,7 +25,21 @@ namespace myGame
             Width = WidthInCells * CellSize;
             Height = HeightInCells * CellSize;
         }
-        
+
+        public Map(string map, int cellSize) : this(ParseMap(map), cellSize) {}
+
+        private static bool[,] ParseMap(string map)
+        {
+            var rows = map.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var height = rows.Length;
+            var width = rows[0].Length;
+            var result = new bool[width, height];
+            for (var x = 0; x < width; x++)
+                for (var y = 0; y < height; y++)
+                    result[x, y] = rows[x][y] == '@';
+            return result;
+        }
+
         public Point InWhichCell(Point position)
         {
             return new Point(position.X / CellSize, position.Y / CellSize);
