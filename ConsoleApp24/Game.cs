@@ -1,4 +1,5 @@
-﻿using System.Timers;
+﻿using System.Collections.Generic;
+using System.Timers;
 
 namespace myGame
 {
@@ -6,6 +7,7 @@ namespace myGame
     {
         public Map Map;
         public Player Player;
+        public List<Enemy> Enemies = new List<Enemy>();
 
         public void Pause()
         {
@@ -16,6 +18,12 @@ namespace myGame
         {
             if (!Map.IsWallAt(Player.NextPosition))
                 Player.TryMove();
+            foreach (var enemy in Enemies)
+            {
+                if (enemy.Life <= 0)
+                    continue;
+                enemy.Move(Player, Map);
+            }
         }
     }
 }

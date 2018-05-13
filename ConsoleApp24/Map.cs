@@ -33,9 +33,9 @@ namespace myGame
             var rows = map.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
             var height = rows.Length;
             var width = rows[0].Length;
-            var result = new bool[width, height];
-            for (var x = 0; x < width; x++)
-                for (var y = 0; y < height; y++)
+            var result = new bool[height, width];
+            for (var x = 0; x < height; x++)
+                for (var y = 0; y < width; y++)
                     result[x, y] = rows[x][y] == '@';
             return result;
         }
@@ -50,7 +50,6 @@ namespace myGame
             var cell = InWhichCell(position);
             return CellIsWall[cell.X, cell.Y];
         }
-
     }
 
 //    class MapCreature

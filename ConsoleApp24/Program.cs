@@ -13,7 +13,7 @@ namespace myGame
         {
 //            Application.EnableVisualStyles();
 //            Application.SetCompatibleTextRenderingDefault(false);
-            var map = "@@@\r\n@.@\r\n@@@";
+            var map = "@@@@@\r\n@...@\r\n@.@.@\r\n@...@\r\n@@@@@";
             var form = new GameForm(map);
             Application.Run(form);
         }
