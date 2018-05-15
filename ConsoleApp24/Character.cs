@@ -1,10 +1,33 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 
 namespace myGame
 {
-    internal class Character : GameItem
+    public class Character : GameItem
     {
-        public Point Size { get; }
-        public Point LeftLowerCorner { get; set; }
+        public Point GetNextPosition(Direction wantedDirection, Point position)
+        {
+            int dx = 0, dy = 0;
+            switch (wantedDirection)
+            {
+                case Direction.None:
+                    break;
+                case Direction.Left:
+                    dx = -1;
+                    break;
+                case Direction.Right:
+                    dx = +1;
+                    break;
+                case Direction.Up:
+                    dy = -1;
+                    break;
+                case Direction.Down:
+                    dy = +1;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            return new Point(position.X + dx, position.Y + dy);
+        }
     }
 }

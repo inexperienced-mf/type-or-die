@@ -14,10 +14,10 @@ namespace myGame
         {
             game = new Game()
             {
-                Map = new Map(map, 10),
-                Player = new Player(new Point(15, 15), 200),
-                Enemies = new List<Enemy>() { new Enemy(new Point(14, 20), 200, 10, 1, 1, 1,
-                new List<Point>() { new Point(14, 25), new Point(34, 25) }, 10) }
+                Map = new Map(map, 50),
+                Player = new Player(new Point(74, 75), 20, 10),
+                Enemies = new List<Enemy>() { new Enemy(new Point(74, 100), 50, 10, 20, 1, 1,
+                new List<Point>() { new Point(74, 80), new Point(174, 120) }, 10) }
             };
             ClientSize = new Size(600, 600);
             timer = new Timer { Interval = 10 };
@@ -28,7 +28,8 @@ namespace myGame
             Controls.Add(pictureBox);
             timer.Tick += (sender, args) => { game.Tick(); };
             timer.Tick += (sender, args) => { pictureBox.Invalidate(); };
-            timer.Tick += (sender, args) => { pos.Text = game.Player.Position.ToString() + " " + game.Enemies[0].Position.ToString(); };
+            timer.Tick += (sender, args) => { pos.Text = game.Player.Position.ToString() + " " + 
+                game.Enemies[0].Position.ToString() + "  " + game.Player.Life.ToString(); };
             timer.Start();
         }
 
@@ -67,7 +68,9 @@ namespace myGame
                 }
             foreach (var enemy in game.Enemies)
                 g.FillRectangle(new SolidBrush(Color.Red), new Rectangle(enemy.Position.X + 100 - enemy.Size / 2 + 1,
-                    enemy.Position.Y + 100 - enemy.Size / 2 + 1, 10, 10));
+                    enemy.Position.Y + 100 - enemy.Size / 2 + 1, enemy.Size, enemy.Size));
+            g.FillRectangle(new SolidBrush(Color.Blue), new Rectangle(game.Player.Position.X + 100 - game.Player.Size / 2 + 1,
+                    game.Player.Position.Y + 100 - game.Player.Size / 2 + 1, game.Player.Size, game.Player.Size));
         }
 
         private void HandleKey(KeyEventArgs e, bool down)
