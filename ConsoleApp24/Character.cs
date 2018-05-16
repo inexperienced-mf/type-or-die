@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace myGame
 {
-    public class Character : GameItem
+    public class Character
     {
         public Point GetNextPosition(Direction wantedDirection, Point position)
         {
@@ -28,6 +28,11 @@ namespace myGame
                     throw new ArgumentOutOfRangeException();
             }
             return new Point(position.X + dx, position.Y + dy);
+        }
+
+        public int GetDistanceToTarget(Point target, Point position)
+        {
+            return Math.Abs(target.X - position.X) + Math.Abs(target.Y - position.Y);
         }
     }
 }
