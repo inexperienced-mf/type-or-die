@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Timers;
@@ -7,9 +8,13 @@ namespace myGame
 {
     public class Game
     {
+        private Timer CastTimer = new Timer { Interval = 50000 };
+        public bool ThrowCast;
         public Map Map;
         public Player Player;
         public List<Enemy> Enemies = new List<Enemy>();
+        public Queue<Cast> Casts = new Queue<Cast>();
+        public bool End { get; private set; }
 
         public void Pause()
         {
@@ -25,6 +30,24 @@ namespace myGame
             if (!Map.IsWallAt(leftDownAngle) && !Map.IsWallAt(leftUpAngle) &&
                 !Map.IsWallAt(rightDownAngle) && !Map.IsWallAt(rightUpAngle))
                 Player.TryMove();
+            if (Casts.Count != 0 && Player.GetDistanceToTarget(Casts.Peek().Position, Player.Position) < Casts.Peek().Size)
+            {
+                Player.Backpack.Enqueue(Casts.FirstOrDefault());
+                Casts.Dequeue();
+                ThrowCast = false;
+                CastTimer.Start();
+            }
+        }
+
+        public Game (Map map, Player player, List<Enemy> enemies, Queue<Cast> casts)
+        {
+            Map = map;
+            Player = player;
+            Enemies = enemies;
+            Casts = casts;
+            CastTimer.Elapsed += (sender, args) => ThrowCast = true;
+            CastTimer.AutoReset = false;
+            CastTimer.Start();
         }
 
         private void MoveEnemies()
@@ -43,6 +66,8 @@ namespace myGame
                 MovePlayer();
                 MoveEnemies();
             }
+            if (Enemies.Count == 0)
+                End = true;
         }
     }
 }
