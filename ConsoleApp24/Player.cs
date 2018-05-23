@@ -11,9 +11,8 @@ namespace myGame
     public class Player : Character
     {
         public Point Position { get; private set; }
-        public Cast SelectedCast { get; private set; }
-        public string SelectedCommand { get; private set; }
-        public string input = "";
+        public readonly Caster Caster;
+        private Direction wantedDirection;
         public Direction WantedDirection
         {
             get => wantedDirection;
@@ -23,112 +22,110 @@ namespace myGame
                 NextPosition = GetNextPosition(wantedDirection, Position);
             }
         }
-        public int Life;
         public Point NextPosition { get; private set; }
-        public bool CanMove { get; private set; }
-        public bool WantAttack { get; set; }
-        public bool IsBlocked { get; private set; }
-        private Direction wantedDirection;
-        private readonly Timer movementTimer;
-        private readonly double movementCooldown;
         public readonly int Radius;
-        public readonly int attackTime;
-        public int AttackRadius { get; private set; }
-        private int BonusDamage;
-        public Queue<Cast> Backpack = new Queue<Cast>();
-        private int Fine { get; set; }
-        private readonly Dictionary<string, int> AttackCommands;
-        public Player(Point position, double movementCooldown, int radius, int attackTime, int attackRadius, Dictionary<string, int> attackCommand)
+        public Player(Point position, int movementCooldown, int radius, int healthPoints, int bagSize) 
+            : base(movementCooldown, radius, healthPoints)
         {
-            Life = 100;
             Radius = radius;
-            this.Position = position;
-            this.movementCooldown = movementCooldown;
-            this.attackTime = attackTime;
-            this.AttackRadius = attackRadius;
-            movementTimer = new Timer(this.movementCooldown);
-            movementTimer.Elapsed += (sender, args) => CanMove = true;
-            movementTimer.AutoReset = false;
-            movementTimer.Start();
-            SelectedCast = null;
-            IsBlocked = true;
-            Fine = 0;
-            BonusDamage = 0;
-            AttackCommands = attackCommand;
+            Position = position;
+            Caster = new Caster(bagSize);
         }
 
         public void TryMove()
         {
-            if (!CanMove) return;
-            Position = NextPosition;
-            NextPosition = GetNextPosition(WantedDirection, Position);
-            CanMove = false;
-            movementTimer.Start();
-        }
-
-        public void InputCommand(char c, List<Enemy> enemies)
-        {
-            var command = (SelectedCast == null) ? SelectedCommand : SelectedCast.Command;
-            if (command.Length >= input.Length && command[input.Length] == c)
-                input += c;
-            else Fine++;
-            if (command.Length == input.Length)
+            MovementTimer.Tick();
+            if (MovementTimer.IsReady && Position != NextPosition) 
             {
-                if (SelectedCast != null)
-                {
-                    Backpack.Dequeue();
-                    Cast();
-                }
-                else Attack(FindEnemies(enemies));
-                IsBlocked = true;
-                SelectedCast = null;
-                SelectedCommand = "";
-                input = "";
+                Move();
+                MovementTimer.Restart();
             }
         }
 
-        private void Cast()
+        private void Move()
         {
-            BonusDamage += SelectedCast.DamageDif - Fine;
-            AttackRadius += SelectedCast.AttackRadiusDif - Fine;
-            Life += SelectedCast.LifeDif - Fine;
+            Position = NextPosition;
+            NextPosition = GetNextPosition(WantedDirection, Position);
+        }
+    }
+
+    public class Caster
+    {
+        public State State;
+        private List<Cast> bag;
+        public int BagSize;
+        public Cast SelectedCast;
+        public int Fine { get; private set; }
+        public int SelectedCastOrd { get; set; }
+        public int CurrentChar { get; private set; }
+
+        public Caster(int bagSize)
+        {
+            bag = new List<Cast>(bagSize);
+            State = State.Choosing;
+            bag.Add(Cast.AttackNearest);
+            bag.Add(Cast.AttackNearest);
+            bag.Add(Cast.Heal);
+            bag.Add(Cast.Heal);
+            BagSize = bagSize;
         }
 
-        public void SelectCast()
+        private Dictionary<char, int> translate = new Dictionary<char, int>()
         {
-            SelectedCast = Backpack.Peek();
-            IsBlocked = false;
-            input = "";
-            Fine = 0;
-            Console.WriteLine(1);
+            {'q', 0}, {'w', 1}, {'e', 2}, {'r', 3},{'t', 4}, {'y', 5} 
+        };
+
+
+        public bool TryPickUp(Cast cast)
+        {
+            if (bag.Count >= BagSize) return false;
+            bag.Add(cast);
+            return true;
         }
 
-        public void SelectCommand(int n)
+        public void Register(char c)
         {
-            SelectedCommand = AttackCommands.Keys.ToList()[n];
-            IsBlocked = false;
-            input = "";
-            Fine = 0;
+            switch (State)
+            {
+                case State.Blocked:
+                    break;
+                case State.Choosing:
+                    if (!translate.ContainsKey(c) || translate[c] >= bag.Count)
+                        break;
+                    SelectedCastOrd = translate[c];
+                    SelectedCast = bag[SelectedCastOrd];
+                    CurrentChar = 0;
+                    State = State.Typing;
+                    break;
+                case State.Typing:
+                    if (SelectedCast.Command[CurrentChar] == c)
+                        CurrentChar++;
+                    else Fine++;
+                    if (CurrentChar == SelectedCast.Command.Length)
+                        State = State.Ready;
+                    break;
+                case State.Ready:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
-        public void MakeDamage(int damage)
+        public void TryInvoke(Game game)
         {
-            Life -= damage;
+            if (State == State.Ready)
+            {
+                SelectedCast.Effect(game, Fine);
+                Fine = 0;
+                State = State.Choosing;
+                bag.RemoveAt(SelectedCastOrd);
+            }
         }
+    }
 
-        public List<Enemy> FindEnemies(List<Enemy> enemies)
-        {
-            return enemies
-                .Where(e => GetDistanceToTarget(e.Position, Position) <= AttackRadius)
-                .ToList();
-        }
-
-        public void Attack(List<Enemy> enemies)
-        {
-            foreach (var enemy in enemies)
-                if (Fine < BonusDamage + AttackCommands[input])
-                    enemy.MakeDamage(BonusDamage + AttackCommands[input] - Fine);
-        }
+    public enum State
+    {
+        Blocked, Choosing, Typing, Ready
     }
 
     public enum Direction

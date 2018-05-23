@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Timers;
 
 namespace myGame
 {
@@ -27,12 +28,25 @@ namespace myGame
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
             return new Point(position.X + dx, position.Y + dy);
         }
 
-        public int GetDistanceToTarget(Point target, Point position)
+        public int HealthPoints { get; set; }
+        public readonly int Radius;
+        public TickTimer MovementTimer;
+        public bool IsAlive;
+
+        public Character(int movementCooldown, int radius, int healthPoints)
         {
-            return Math.Abs(target.X - position.X) + Math.Abs(target.Y - position.Y);
+            HealthPoints = healthPoints;
+            MovementTimer = new TickTimer(movementCooldown);
+            Radius = radius;
         }
+
+        public void TakeDamage(int damage) => HealthPoints -= damage;
+
+        public static int GetDistanceToTarget(Point target, Point position) =>
+            Math.Abs(target.X - position.X) + Math.Abs(target.Y - position.Y);
     }
 }

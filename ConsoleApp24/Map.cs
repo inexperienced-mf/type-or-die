@@ -19,8 +19,8 @@ namespace myGame
         public Map(bool[,] cells, int cellSize)
         {
             CellIsWall = cells;
-            WidthInCells = CellIsWall.GetLength(0);
-            HeightInCells = CellIsWall.GetLength(1);
+            WidthInCells = CellIsWall.GetLength(1);
+            HeightInCells = CellIsWall.GetLength(0);
             CellSize = cellSize;
             Width = WidthInCells * CellSize;
             Height = HeightInCells * CellSize;

@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Timers;
+using System.Runtime;
 
 namespace myGame
 {
     public class DirectionFinder
     {
-        private static readonly Dictionary<Direction, Point> shift = new Dictionary<Direction, Point>() {
+        private static readonly Dictionary<Direction, Point> shift = new Dictionary<Direction, Point>
+        {
             { Direction.Down, new Point(0, 1) },
             { Direction.Up, new Point(0, -1) },
             { Direction.Right, new Point(1, 0) },
@@ -58,15 +59,13 @@ namespace myGame
             {
                 return FindDirectionToCell(map, position, target, radius);
             }
-            else
-            {
-                var wantedDirection = Direction.None;
-                if (target.X - position.X > 0) wantedDirection = Direction.Right;
-                else if (target.X - position.X != 0) wantedDirection = Direction.Left;
-                else if (target.Y - position.Y > 0) wantedDirection = Direction.Down;
-                else if (target.Y - position.Y != 0) wantedDirection = Direction.Up;
-                return BypassObstacle(wantedDirection, map, radius, position);
-            }
+
+            var wantedDirection = Direction.None;
+            if (target.X - position.X > 0) wantedDirection = Direction.Right;
+            else if (target.X - position.X != 0) wantedDirection = Direction.Left;
+            else if (target.Y - position.Y > 0) wantedDirection = Direction.Down;
+            else if (target.Y - position.Y != 0) wantedDirection = Direction.Up;
+            return BypassObstacle(wantedDirection, map, radius, position);
         }
 
         private static Direction BypassObstacle(Direction direction, Map map, int radius, Point position)
@@ -78,11 +77,11 @@ namespace myGame
             var rightUpAngle = new Point(nextPosition.X + radius, nextPosition.Y - radius);
             if (direction == Direction.Right && (map.IsWallAt(rightDownAngle) || map.IsWallAt(rightUpAngle)))
                 return (map.IsWallAt(rightDownAngle)) ? Direction.Up : Direction.Down;
-            else if (direction == Direction.Left && (map.IsWallAt(leftDownAngle) || map.IsWallAt(leftUpAngle)))
+            if (direction == Direction.Left && (map.IsWallAt(leftDownAngle) || map.IsWallAt(leftUpAngle)))
                 return (map.IsWallAt(leftDownAngle)) ? Direction.Up : Direction.Down;
-            else if (direction == Direction.Down && (map.IsWallAt(leftDownAngle) || map.IsWallAt(rightDownAngle)))
+            if (direction == Direction.Down && (map.IsWallAt(leftDownAngle) || map.IsWallAt(rightDownAngle)))
                 return (map.IsWallAt(rightDownAngle)) ? Direction.Left : Direction.Right;
-            else if (direction == Direction.Up && (map.IsWallAt(leftUpAngle) || map.IsWallAt(rightUpAngle)))
+            if (direction == Direction.Up && (map.IsWallAt(leftUpAngle) || map.IsWallAt(rightUpAngle)))
                 return (map.IsWallAt(rightUpAngle)) ? Direction.Left : Direction.Right;
             return direction;
         }
@@ -90,75 +89,75 @@ namespace myGame
 
     public class Enemy : Character
     {
-        private Direction wantedDirection;
-        public Direction WantedDirection
-        {
-            get => wantedDirection;
-            set
-            {
-                wantedDirection = value;
-                Position = GetNextPosition(wantedDirection, Position);
-            }
-        }
         private readonly int Damage;
-        public int Life { get; private set; }
         private readonly int visibilityRadius;
-        public readonly int Radius;
-        public bool CanMove { get; set; }
         private readonly int attackRadius;
         private readonly int pursuitRadius;
+        public TickTimer AttackTimer;
         public Point Position { get; private set; }
         private readonly Queue<Point> Trajectory = new Queue<Point>();
-        private readonly Timer movementTimer;
 
-        public Enemy(Point position, int movementCooldown, int radius, int visibilityRadius,
-            int attackRadius, int pursuitRadius, List<Point> trajectory, int damage)
+        public Enemy(
+            Point position, 
+            int movementCooldown, 
+            int radius, 
+            int visibilityRadius,
+            int attackRadius, 
+            int pursuitRadius, 
+            List<Point> trajectory, 
+            int healthPoints, 
+            int damage, 
+            int attackCooldown) 
+            : base(movementCooldown, radius, healthPoints)
         {
             Position = position;
-            Radius = radius;
             Damage = damage;
+            AttackTimer = new TickTimer(attackCooldown);
             this.visibilityRadius = visibilityRadius;
             this.attackRadius = attackRadius;
             this.pursuitRadius = pursuitRadius;
             Trajectory = new Queue<Point>(trajectory);
-            Life = 100;
-            movementTimer = new Timer(movementCooldown)
+        }
+
+        private void TryAttack(Player player)
+        {
+            AttackTimer.Tick();
+            if (AttackTimer.IsReady)
             {
-                AutoReset = false
-            };
-            movementTimer.Elapsed += (sender, args) => CanMove = true;
-            movementTimer.Start();
+                player.TakeDamage(Damage);
+                AttackTimer.Restart();
+            }
         }
 
-        public void MakeDamage(int damage)
+        public void TryAct(Player player, Map map)
         {
-            Life -= damage;
+            MovementTimer.Tick();
+            if (MovementTimer.IsReady)
+                Act(player, map);
         }
 
-        private void Attack(Player player)
+        private void Act(Player player, Map map)
         {
-            player.MakeDamage(Damage);
-        }
-
-        public void TryMove(Player player, Map map)
-        {
-            if (CanMove)
+            Point target = Position;
+            if (GetDistanceToTarget(player.Position, Position) <= visibilityRadius)
             {
-                if (GetDistanceToTarget(player.Position, Position) <= visibilityRadius)
-                {
-                    if (GetDistanceToTarget(player.Position, Position) > attackRadius)
-                        WantedDirection = DirectionFinder.FindDirectionToTarget(map, player.Position, Position, Radius);
-                    else
-                        Attack(player);
-                }
+                if (GetDistanceToTarget(player.Position, Position) > attackRadius)
+                    target = player.Position;
                 else
-                {
-                    if (Position == Trajectory.Peek())
-                        Trajectory.Enqueue(Trajectory.Dequeue());
-                    WantedDirection = DirectionFinder.FindDirectionToTarget(map, Trajectory.Peek(), Position, Radius);
-                }
-                CanMove = false;
-                movementTimer.Start();
+                    TryAttack(player);
+            }
+            else
+            {
+                if (Position == Trajectory.Peek())
+                    Trajectory.Enqueue(Trajectory.Dequeue());
+                target = Trajectory.Peek();
+            }
+
+            var direction = DirectionFinder.FindDirectionToTarget(map, target, Position, Radius);
+            if (direction != Direction.None)
+            {
+                Position = GetNextPosition(direction, Position);
+                MovementTimer.Restart();
             }
         }
     }

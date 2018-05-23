@@ -8,20 +8,14 @@ namespace myGame
 {
     public class Game
     {
-        private Timer CastTimer = new Timer { Interval = 50000 };
-        public bool ThrowCast;
         public Map Map;
         public Player Player;
         public List<Enemy> Enemies = new List<Enemy>();
-        public Queue<Cast> Casts = new Queue<Cast>();
-        public bool End { get; private set; }
+        public bool IsEnd { get; private set; }
+        public bool IsPaused = true;
 
-        public void Pause()
-        {
-            // nothing to do
-        }
 
-        private void MovePlayer()
+        private void ActPlayer()
         {
             var leftUpAngle = new Point(Player.NextPosition.X - Player.Radius, Player.NextPosition.Y - Player.Radius);
             var rightDownAngle = new Point(Player.NextPosition.X + Player.Radius, Player.NextPosition.Y + Player.Radius);
@@ -30,44 +24,32 @@ namespace myGame
             if (!Map.IsWallAt(leftDownAngle) && !Map.IsWallAt(leftUpAngle) &&
                 !Map.IsWallAt(rightDownAngle) && !Map.IsWallAt(rightUpAngle))
                 Player.TryMove();
-            if (Casts.Count != 0 && Player.GetDistanceToTarget(Casts.Peek().Position, Player.Position) < Casts.Peek().Size)
-            {
-                Player.Backpack.Enqueue(Casts.FirstOrDefault());
-                Casts.Dequeue();
-                ThrowCast = false;
-                CastTimer.Start();
-            }
+            Player.Caster.TryInvoke(this);
         }
 
-        public Game (Map map, Player player, List<Enemy> enemies, Queue<Cast> casts)
+        public Game (Map map, Player player, List<Enemy> enemies)
         {
             Map = map;
             Player = player;
             Enemies = enemies;
-            Casts = casts;
-            CastTimer.Elapsed += (sender, args) => ThrowCast = true;
-            CastTimer.AutoReset = false;
-            CastTimer.Start();
         }
 
-        private void MoveEnemies()
+        private void ActEnemies()
         {
-            Enemies = Enemies.Where(e => e.Life > 0).ToList();
+            Enemies = Enemies.Where(e => e.HealthPoints > 0).ToList();
             foreach (var enemy in Enemies)
-            {
-                enemy.TryMove(Player, Map);
-            }
+                enemy.TryAct(Player, Map);
         }
         
         public void Tick()
         {
-            if (Player.Life > 0)
+            if (IsPaused)
+                return;
+            if (Player.HealthPoints > 0)
             {
-                MovePlayer();
-                MoveEnemies();
+                ActPlayer();
+                ActEnemies();
             }
-            if (Enemies.Count == 0)
-                End = true;
         }
     }
 }
