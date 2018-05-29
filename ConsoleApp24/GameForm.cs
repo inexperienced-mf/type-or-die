@@ -14,21 +14,12 @@ namespace myGame
         private readonly Dictionary<string, Bitmap> bitmaps = new Dictionary<string, Bitmap>();
         private Game game;
         private readonly Timer timer;
-        private Label pos;
-        private Label InputCommand;
-        private Label RemainingCommand;
 
-        public GameForm(Map map, Player player, List<Enemy> enemies)
+        public GameForm(Map map, Player player, List<Enemy> enemies, Point exit)
         {
-            game = new Game(map, player, enemies);
+            game = new Game(map, player, enemies, exit);
             ClientSize = new Size(850, 600);
             timer = new Timer { Interval = 5 };
-            pos = new Label() { Size = new Size(ClientSize.Width, 20) };
-            InputCommand = new Label() { Top = 25, ForeColor = Color.Black };
-            RemainingCommand = new Label() { Top = 45, ForeColor = Color.Gray};
-            Controls.Add(pos);
-            Controls.Add(InputCommand);
-            Controls.Add(RemainingCommand);
             DirectoryInfo imagesDirectory = new DirectoryInfo("images");
             foreach (var e in imagesDirectory.GetFiles("*.png"))
                 bitmaps[e.Name] = (Bitmap)Image.FromFile(e.FullName);
@@ -36,28 +27,10 @@ namespace myGame
             {
                 game.Tick();
                 Invalidate();
-                UpdateStatus();
             };
             FormBorderStyle = FormBorderStyle.FixedSingle;
             DoubleBuffered = true;
             timer.Start();
-        }
-
-        private void UpdateStatus()
-        {
-            pos.Text = game.Player.Position + " " +
-                game.Player.HealthPoints + " " +
-                (game.Enemies.Count != 0 ? game.Enemies
-                    .Select(e => e.HealthPoints.ToString())
-                    .Aggregate((x, y) => x + " " + y) : string.Empty);
-            var caster = game.Player.Caster;
-            if (caster.State == State.Typing)
-            {
-                InputCommand.Text = caster.SelectedCast.Command;
-                RemainingCommand.Text = caster.SelectedCast.Command.Substring(0, caster.CurrentChar);
-            }
-            else
-                InputCommand.Text = RemainingCommand.Text = string.Empty;
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -71,7 +44,8 @@ namespace myGame
         protected override void OnKeyPress(KeyPressEventArgs e)
         {
             base.OnKeyPress(e);
-            game.Player.Caster.Register(e.KeyChar);
+            if (!game.IsPaused)
+                game.Player.Caster.Register(e.KeyChar);
         }
 
         protected override void OnKeyUp(KeyEventArgs e)
@@ -90,36 +64,92 @@ namespace myGame
 
         private void DrawMap(Graphics g)
         {
+            var xShift = 10;
+            var yShift = 70;
             for (var i = 0; i < game.Map.WidthInCells; i++)
                 for (var j = 0; j < game.Map.HeightInCells; j++)
                 {
                     if (game.Map.CellIsWall[i, j])
-                        g.DrawImage(bitmaps["Obstacle.png"],
-                            i * game.Map.CellSize + 10, j * game.Map.CellSize + 70);
+                        g.DrawImage(bitmaps["Obstacle.png"], new Rectangle(
+                            i * game.Map.CellSize + xShift, j * game.Map.CellSize + yShift,
+                            game.Map.CellSize, game.Map.CellSize));
                     else
                         g.DrawImage(bitmaps["Grass.png"],
-                            i * game.Map.CellSize + 10, j * game.Map.CellSize + 70);
+                            new Rectangle(
+                            i * game.Map.CellSize + xShift, j * game.Map.CellSize + yShift,
+                            game.Map.CellSize, game.Map.CellSize));
                 }
+            foreach (var color in game.Map.CheckedPoints)
+                foreach (var point in color.Value)
+                    g.DrawRectangle(
+                       new Pen(new SolidBrush(color.Key), 5),
+                       new Rectangle(
+                           point.X * game.Map.CellSize + xShift, point.Y * game.Map.CellSize + yShift,
+                           game.Map.CellSize, game.Map.CellSize));
         }
 
         private void DrawEnemies(Graphics g)
         {
+            var xShift = 10;
+            var yShift = 70;
             foreach (var enemy in game.Enemies)
             {
                 g.FillRectangle(
                     new SolidBrush(Color.Red),
-                    new Rectangle(enemy.Position.X + 10 - enemy.Radius,
-                        enemy.Position.Y + 70 - enemy.Radius,
+                    new Rectangle(enemy.Position.X + xShift - enemy.Radius,
+                        enemy.Position.Y + yShift - enemy.Radius,
                         enemy.Radius * 2 + 1, enemy.Radius * 2 + 1));
+                DrawHpStatus(g, enemy.HealthPoints, enemy.FullHealthPoints, enemy.Position, enemy.Radius);
             }
+        }
+
+        private void DrawBag(Graphics g)
+        {
+            var yShift = 80;
+            var xShift = 10;
+            for (var i = 0; i < game.Player.Caster.BagSize; i++)
+            {
+                var rect = new Rectangle(xShift * (i + 1) + game.Map.CellSize * i,
+                        game.Map.HeightInCells * game.Map.CellSize + yShift,
+                        game.Map.CellSize, game.Map.CellSize);
+                g.FillRectangle(
+                    new SolidBrush(Color.Black), rect);
+                if (game.Player.Caster.Bag.Count > i)
+                {
+                    var itemCommand = game.Player.Caster.Bag[i].Command;
+                    g.DrawImage(bitmaps[itemCommand + ".png"], rect);
+                }
+            }
+        }
+
+        private void DrawHpStatus(Graphics g, int hp, int fullHp, Point position, int radius)
+        {
+            var xShift = 10;
+            var yShift = 65;
+            var hpColor = new Color();
+            if (hp > 0.7 * fullHp)
+                hpColor = Color.LimeGreen;
+            else hpColor = (hp > 0.35 * fullHp) ? Color.Orange : Color.Red;
+            g.FillRectangle(
+                new SolidBrush(Color.Black),
+                new Rectangle(position.X + xShift - radius,
+                    position.Y + yShift - radius,
+                    radius * 2 + 1, 3));
+            g.FillRectangle(
+                new SolidBrush(hpColor),
+                new Rectangle(position.X + xShift - radius,
+                    position.Y + yShift - radius,
+                    (radius * 2 + 1) * hp / fullHp, 3));
         }
 
         private void DrawPlayer(Graphics g)
         {
+            var xSift = 10;
+            var yShift = 70;
             g.FillRectangle(
                 new SolidBrush(Color.Blue),
-                new Rectangle(game.Player.Position.X + 10 - game.Player.Radius,
-                    game.Player.Position.Y + 70 - game.Player.Radius,
+                new Rectangle(game.Player.Position.X + xSift - game.Player.Radius,
+                    game.Player.Position.Y + yShift - game.Player.Radius,
                     game.Player.Radius * 2 + 1, game.Player.Radius * 2 + 1));
         }
 
@@ -130,6 +160,47 @@ namespace myGame
             DrawMap(g);
             DrawEnemies(g);
             DrawPlayer(g);
+            DrawBag(g);
+            DrawStatusBar(g);
+            DrawCasts(g);
+        }
+
+        private void DrawCasts(Graphics g)
+        {
+            var castSize = game.Map.CellSize / 3;
+            var xShift = 10;
+            var yShift = 70;
+            foreach (var cast in game.Casts)
+            {
+                var rect = new Rectangle(cast.Key.X - castSize / 2 + xShift,
+                                        cast.Key.Y - castSize / 2 + yShift,
+                                        castSize, castSize);
+                g.DrawImage(bitmaps[cast.Value.Command + ".png"], rect);
+            }
+        }
+
+        private void DrawStatusBar(Graphics g)
+        {
+            var xShift = 10;
+            var hpColor = new Color();
+            if (game.Player.HealthPoints > 0.7 * game.Player.FullHealthPoints)
+                hpColor = Color.LimeGreen;
+            else hpColor = (game.Player.HealthPoints > 0.35 * game.Player.FullHealthPoints) ? Color.Orange : Color.Red;
+            g.FillRectangle(new SolidBrush(Color.Black), new Rectangle(10, 20, 100, 30));
+            g.FillRectangle(new SolidBrush(hpColor), new Rectangle(10, 20,
+                    100 * game.Player.HealthPoints / game.Player.FullHealthPoints, 30));
+            var font = new Font("Arial", 18);
+            g.DrawString(game.Player.HealthPoints.ToString(), font, new SolidBrush(Color.Black),
+               new Point(100 + xShift, 21));
+
+            if (game.Player.Caster.State == State.Typing)
+            {
+                var yShift = 80;
+                var castPosition = new Point(xShift, game.Map.CellSize * (game.Map.HeightInCells + 1) + yShift);
+                g.DrawString(game.Player.Caster.SelectedCast.Command, font, new SolidBrush(Color.Gray), castPosition);
+                g.DrawString(game.Player.Caster.SelectedCast.Command.Substring(0, game.Player.Caster.CurrentChar),
+                    font, new SolidBrush(Color.Black), castPosition);
+            }
         }
 
         private void HandleMoving(KeyEventArgs e, bool down)

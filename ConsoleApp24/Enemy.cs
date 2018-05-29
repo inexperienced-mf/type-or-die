@@ -94,6 +94,8 @@ namespace myGame
         private readonly int attackRadius;
         private readonly int pursuitRadius;
         public TickTimer AttackTimer;
+        public TickTimer StopTimer = new TickTimer(0);
+
         public Point Position { get; private set; }
         private readonly Queue<Point> Trajectory = new Queue<Point>();
 
@@ -129,11 +131,21 @@ namespace myGame
             }
         }
 
+        public void Stop(int interval)
+        {
+            StopTimer = new TickTimer(interval);
+        }
+
         public void TryAct(Player player, Map map)
         {
-            MovementTimer.Tick();
-            if (MovementTimer.IsReady)
-                Act(player, map);
+            if (StopTimer.IsReady)
+            {
+                MovementTimer.Tick();
+                if (MovementTimer.IsReady)
+                    Act(player, map);
+            }
+            else
+                StopTimer.Tick();
         }
 
         private void Act(Player player, Map map)

@@ -32,6 +32,7 @@ namespace myGame
             return new Point(position.X + dx, position.Y + dy);
         }
 
+        public int FullHealthPoints { get; private set; }
         public int HealthPoints { get; set; }
         public readonly int Radius;
         public TickTimer MovementTimer;
@@ -39,12 +40,18 @@ namespace myGame
 
         public Character(int movementCooldown, int radius, int healthPoints)
         {
+            FullHealthPoints = healthPoints;
             HealthPoints = healthPoints;
             MovementTimer = new TickTimer(movementCooldown);
             Radius = radius;
         }
 
-        public void TakeDamage(int damage) => HealthPoints -= damage;
+        public void TakeDamage(int damage)
+        {
+            HealthPoints -= damage;
+            if (HealthPoints > FullHealthPoints)
+                FullHealthPoints = HealthPoints;
+        }
 
         public static int GetDistanceToTarget(Point target, Point position) =>
             Math.Abs(target.X - position.X) + Math.Abs(target.Y - position.Y);

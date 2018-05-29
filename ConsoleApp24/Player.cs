@@ -52,7 +52,7 @@ namespace myGame
     public class Caster
     {
         public State State;
-        private List<Cast> bag;
+        public List<Cast> Bag { get; private set; }
         public int BagSize;
         public Cast SelectedCast;
         public int Fine { get; private set; }
@@ -61,12 +61,14 @@ namespace myGame
 
         public Caster(int bagSize)
         {
-            bag = new List<Cast>(bagSize);
+            Bag = new List<Cast>(bagSize);
             State = State.Choosing;
-            bag.Add(Cast.AttackNearest);
-            bag.Add(Cast.AttackNearest);
-            bag.Add(Cast.Heal);
-            bag.Add(Cast.Heal);
+            Bag.Add(Cast.AttackNearest);
+            Bag.Add(Cast.AttackNearest);
+            Bag.Add(Cast.Heal);
+            Bag.Add(Cast.Heal);
+            Bag.Add(Cast.CheckNeighbourhood);
+            Bag.Add(Cast.ParalizeEnemies);
             BagSize = bagSize;
         }
 
@@ -78,8 +80,8 @@ namespace myGame
 
         public bool TryPickUp(Cast cast)
         {
-            if (bag.Count >= BagSize) return false;
-            bag.Add(cast);
+            if (Bag.Count >= BagSize) return false;
+            Bag.Add(cast);
             return true;
         }
 
@@ -90,10 +92,10 @@ namespace myGame
                 case State.Blocked:
                     break;
                 case State.Choosing:
-                    if (!translate.ContainsKey(c) || translate[c] >= bag.Count)
+                    if (!translate.ContainsKey(c) || translate[c] >= Bag.Count)
                         break;
                     SelectedCastOrd = translate[c];
-                    SelectedCast = bag[SelectedCastOrd];
+                    SelectedCast = Bag[SelectedCastOrd];
                     CurrentChar = 0;
                     State = State.Typing;
                     break;
@@ -118,7 +120,7 @@ namespace myGame
                 SelectedCast.Effect(game, Fine);
                 Fine = 0;
                 State = State.Choosing;
-                bag.RemoveAt(SelectedCastOrd);
+                Bag.RemoveAt(SelectedCastOrd);
             }
         }
     }
