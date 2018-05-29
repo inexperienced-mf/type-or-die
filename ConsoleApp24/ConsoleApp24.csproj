@@ -79,7 +79,6 @@
       <DependentUpon>GameForm.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <Content Include="images\Grass.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -93,7 +92,7 @@
     <Content Include="images\Obstacle.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="images\paralize.png">
+    <Content Include="images\paralyze.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="images\punch.png">

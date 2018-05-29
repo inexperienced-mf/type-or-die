@@ -15,19 +15,20 @@ namespace myGame
             Effect = effect;
         }
 
-        public static Cast CheckNeighbourhood = new Cast("neighbourhood", (game, mistakesCount) =>
-        {
-            var color = default(Color);
-            var distance = Math.Max(Math.Abs(game.Map.InWhichCell(game.Player.Position).X - game.Exit.X), Math.Abs(game.Map.InWhichCell(game.Player.Position).Y - game.Exit.Y));
-            if (distance >= Math.Min(game.Map.HeightInCells - 1, game.Map.WidthInCells - 1) * 2 / 3)
-                color = Color.Red;
-            else color = (distance < Math.Min(game.Map.HeightInCells, game.Map.WidthInCells) / 3) ? Color.ForestGreen : Color.Orange;
-            if (!game.Map.CheckedPoints.ContainsKey(color))
-                game.Map.CheckedPoints[color] = new HashSet<Point>();
-            game.Map.CheckedPoints[color].Add(game.Map.InWhichCell(game.Player.Position));
-        });
+//        public static Cast CheckNeighbourhood = new Cast("neighbourhood", (game, mistakesCount) =>
+//        {
+//            var color = default(Color);
+//            var distance = Math.Max(Math.Abs(game.Map.InWhichCell(game.Player.Position).X - game.Exit.X), 
+//                Math.Abs(game.Map.InWhichCell(game.Player.Position).Y - game.Exit.Y));
+//            if (distance >= Math.Min(game.Map.HeightInCells - 1, game.Map.WidthInCells - 1) * 2 / 3)
+//                color = Color.Red;
+//            else color = (distance < Math.Min(game.Map.HeightInCells, game.Map.WidthInCells) / 3) ? Color.ForestGreen : Color.Orange;
+//            if (!game.Map.CheckedPoints.ContainsKey(color))
+//                game.Map.CheckedPoints[color] = new HashSet<Point>();
+//            game.Map.CheckedPoints[color].Add(game.Map.InWhichCell(game.Player.Position));
+//        });
 
-        public static Cast ParalizeEnemies = new Cast("paralize", (game, mistakesCount) =>
+        public static Cast ParalyzeEnemies = new Cast("paralyze", (game, mistakesCount) =>
         {
             foreach(var e in game.Enemies)
             {

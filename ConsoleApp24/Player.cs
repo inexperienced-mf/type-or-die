@@ -67,8 +67,7 @@ namespace myGame
             Bag.Add(Cast.AttackNearest);
             Bag.Add(Cast.Heal);
             Bag.Add(Cast.Heal);
-            Bag.Add(Cast.CheckNeighbourhood);
-            Bag.Add(Cast.ParalizeEnemies);
+            Bag.Add(Cast.ParalyzeEnemies);
             BagSize = bagSize;
         }
 

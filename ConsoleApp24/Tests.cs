@@ -125,7 +125,7 @@ namespace myGame
         {
             var textMap = "@@@@@\r\n@...@\r\n@...@\r\n@...@\r\n@@@@@";
             var map = new Map(textMap, 10);
-            CastGenerator.AddTimer = new TickTimer(2);
+            CastGenerator.SpawnCastTimer = new TickTimer(2);
             for (var i = 0; i < 2; i++)
             {
                 var dict = new Dictionary<Point, Cast>();

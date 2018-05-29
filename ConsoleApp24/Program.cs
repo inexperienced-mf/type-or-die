@@ -16,12 +16,42 @@ namespace myGame
         {
             //            Application.EnableVisualStyles();
             //            Application.SetCompatibleTextRenderingDefault(false);
-            var map = "@@@@@\r\n@...@\r\n@.@.@\r\n@...@\r\n@@@@@";
-            var player = new Player(new Point(75, 75), 2, 10, 150, 6);
-            var enemy1 = new Enemy(new Point(175, 175), 3, 10, 60, 20, 30,
-                new List<Point>() { new Point(175, 175), new Point(175, 75) },
-                70, 15, 60);
-            var form = new GameForm(new Map(map, 50), player, new List<Enemy>() { enemy1 }, new Point(3, 3));
+            var map1 =
+                @"
+@@@@@
+@...@
+@.@.@
+@...@
+@@@@@";
+            var level1 = new Game
+            {
+                Map = new Map(map1, 70),
+                Player = new Player(new Point(105, 105), 2, 10, 150, 6),
+                Enemies = new List<Enemy> {new Enemy(new Point(245, 245), 3, 10, 60, 20, 30,
+                    new List<Point>() {new Point(245, 245), new Point(245, 105)},
+                    70, 15, 60)},
+                Exit = new Point(245, 245)
+            };
+
+            var map2 = @"
+@@@@@@@@@
+@..@.@..@
+@@.@...@@
+@@...@..@
+@@@@@@@@@";
+            var level2 = new Game
+            {
+                Map = new Map(map2, 130),
+                Player = new Player(new Point(160, 160), 2, 10, 150, 6),
+                Enemies = new List<Enemy> {new Enemy(new Point(325, 455), 3, 10, 60, 20, 30,
+                    new List<Point>() {new Point(325, 455), new Point(585, 455), new Point(585, 195)},
+                    70, 15, 60)},
+                Exit = new Point(975, 195)
+            };
+            
+            var levels = new List<Game>{level1, level2};
+            var form = new GameForm(levels);
+            
             Application.Run(form);
         }
     }
